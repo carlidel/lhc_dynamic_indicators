@@ -1,0 +1,13 @@
+{
+    "sampling": {
+        "samples_per_side": 300
+    },
+    "tracking": {
+        "max_iterations": 100000,
+        "n_samples": 53,
+        "sampling_method": "log"
+    },
+    "output": {
+        "path": "/home/HPC/camontan/lhc_dynamic_indicators/out"
+    }
+}

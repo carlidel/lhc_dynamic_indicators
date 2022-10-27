@@ -4,14 +4,11 @@ from dataclasses import dataclass
 
 import h5py
 import numpy as np
-from scipy.constants import c as clight
-from scipy.optimize import fsolve
-
 import xobjects as xo
 import xpart as xp
 import xtrack as xt  # To avoid circular imports
-
-from . import linear_normal_form as lnf
+from scipy.constants import c as clight
+from scipy.optimize import fsolve
 
 
 class H5py_writer:
@@ -19,7 +16,7 @@ class H5py_writer:
         self.filename = filename
         self.compression = compression
 
-    def write_data(self, data, dataset_name):
+    def write_data(self, dataset_name:str, data:np.ndarray):
         with h5py.File(self.filename, mode="w") as f:
             if self.compression is None:
                 f.create_dataset(dataset_name, data=data)
@@ -186,7 +183,7 @@ def realign_particles(
 
 
 def get_displacement_module(
-    particles_1: xp.Particles, particles_2: xp.Particles, _context=xo.ContextCpu()
+    particles_1: xp.Particles, particles_2: xp.Particles, _context
 ):
     p_1 = get_particle_data(particles_1, _context=_context)
     p_2 = get_particle_data(particles_2, _context=_context)
@@ -204,7 +201,7 @@ def get_displacement_module(
 
 
 def get_displacement_direction(
-    particles_1: xp.Particles, particles_2: xp.Particles, _context=xo.ContextCpu()
+    particles_1: xp.Particles, particles_2: xp.Particles, _context
 ):
     p_1 = get_particle_data(particles_1, _context=_context)
     p_2 = get_particle_data(particles_2, _context=_context)
@@ -249,14 +246,14 @@ def track_stability(tracker, part, n_turns, _context, outfile: H5py_writer):
     start = datetime.datetime.now()
     print(f"Starting at: {start}")
 
-    tracker.track(part, n_turns=n_turns)
-
+    tracker.track(part, num_turns=n_turns)
+    turns = get_particle_data(part, _context, retidx=False).steps
+    
     end = datetime.datetime.now()
     print(f"Finished at: {end}")
     delta = (end - start).total_seconds()
     print(f"Hours elapsed: {delta / (60*60)}")
-
-    turns = get_particle_data(part, _context, retidx=False).steps
+    
     outfile.write_data("stability", turns)
 
 
@@ -477,9 +474,9 @@ def track_reverse_error_method(
     for i in range(samples):
         print(f"Tracking {i * turns_per_sample} turns... ({i+1}/{samples})")
 
-        tracker.track(f_part, n_turns=turns_per_sample)
+        tracker.track(f_part, num_turns=turns_per_sample)
         r_part = f_part.copy()
-        backtracker.track(r_part, n_turns=turns_per_sample * (i + 1))
+        backtracker.track(r_part, num_turns=turns_per_sample * (i + 1))
 
         data_0 = get_particle_data(f_part, _context=_context)
         data_1 = get_particle_data(r_part, _context=_context)
