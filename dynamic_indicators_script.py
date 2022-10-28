@@ -1,5 +1,6 @@
 import datetime
 import logging
+import warnings
 from dataclasses import dataclass
 from typing import List
 
@@ -12,8 +13,6 @@ import xtrack as xt  # To avoid circular imports
 from numba import njit
 from scipy.constants import c as clight
 from scipy.optimize import fsolve
-
-from . import linear_normal_form as lnf
 
 ## FROM GIANNI'S CODE ############################
 
@@ -216,16 +215,22 @@ class H5py_writer:
         self.filename = filename
         self.compression = compression
 
-    def write_data(self, data, dataset_name, overwrite=False):
+    def write_data(self, dataset_name: str, data: np.ndarray, overwrite=False):
         with h5py.File(self.filename, mode="a") as f:
             # check if dataset already exists
             if dataset_name in f:
                 if overwrite:
                     del f[dataset_name]
-                else:
+                elif overwrite == "raise":
                     raise ValueError(
                         f"Dataset {dataset_name} already exists in file {self.filename}"
                     )
+                else:
+                    # just raise a warning and continue
+                    warnings.warn(
+                        f"Dataset {dataset_name} already exists in file {self.filename}"
+                    )
+                    return
             if self.compression is None:
                 f.create_dataset(dataset_name, data=data)
             else:
@@ -329,14 +334,14 @@ def track_stability(
     start = datetime.datetime.now()
     print(f"Starting at: {start}")
 
-    tracker.track(part, n_turns=n_turns)
+    tracker.track(part, num_turns=n_turns)
+    turns = get_particle_data(part, _context, retidx=False).steps
 
     end = datetime.datetime.now()
     print(f"Finished at: {end}")
     delta = (end - start).total_seconds()
     print(f"Hours elapsed: {delta / (60*60)}")
 
-    turns = get_particle_data(part, _context, retidx=False).steps
     outfile.write_data("stability", turns)
 
 
@@ -387,24 +392,32 @@ def track_log_displacement(
         if kind == "normalize":
             for i, d_part in enumerate(d_part_list):
                 displacement = _context.nparray_from_context_array(
-                    normed_distance(part, d_part, kind=kind, metric=metric)
+                    normed_distance(part, d_part, kind="6d", metric=metric)
                 )
 
                 log_displacement[i] += np.log(displacement / initial_displacement)
                 realign_normed_particles(
-                    part, d_part, initial_displacement, kind=kind, metric=metric
+                    part, d_part, initial_displacement, kind="6d", metric=metric
                 )
 
         elif kind == "sample":
+            part_data = get_particle_data(part, _context, retidx=False)
+            outfile.write_data(f"reference/x/{time}", part_data.x)
+            outfile.write_data(f"reference/px/{time}", part_data.px)
+            outfile.write_data(f"reference/y/{time}", part_data.y)
+            outfile.write_data(f"reference/py/{time}", part_data.py)
+            outfile.write_data(f"reference/zeta/{time}", part_data.zeta)
+            outfile.write_data(f"reference/delta/{time}", part_data.delta)
+
             for i, d_part in enumerate(d_part_list):
                 displacement = _context.nparray_from_context_array(
-                    normed_distance(part, d_part, kind=kind, metric=metric)
+                    normed_distance(part, d_part, kind="6d", metric=metric)
                 )
                 disp_to_save = log_displacement[i] + np.log(
                     displacement / initial_displacement
                 )
 
-                part_data = get_particle_data(part, _context, retidx=False)
+                part_data = get_particle_data(d_part, _context, retidx=False)
                 outfile.write_data(f"{d_part_names[i]}/log_disp/{time}", disp_to_save)
                 outfile.write_data(f"{d_part_names[i]}/x/{time}", part_data.x)
                 outfile.write_data(f"{d_part_names[i]}/px/{time}", part_data.px)
@@ -412,6 +425,26 @@ def track_log_displacement(
                 outfile.write_data(f"{d_part_names[i]}/py/{time}", part_data.py)
                 outfile.write_data(f"{d_part_names[i]}/zeta/{time}", part_data.zeta)
                 outfile.write_data(f"{d_part_names[i]}/delta/{time}", part_data.delta)
+
+                n_dist, n_val = normed_direction(part, d_part, kind="6d")
+                outfile.write_data(
+                    f"{d_part_names[i]}/normed_distance/x/{time}", n_dist[0].get()
+                )
+                outfile.write_data(
+                    f"{d_part_names[i]}/normed_distance/px/{time}", n_dist[1].get()
+                )
+                outfile.write_data(
+                    f"{d_part_names[i]}/normed_distance/y/{time}", n_dist[2].get()
+                )
+                outfile.write_data(
+                    f"{d_part_names[i]}/normed_distance/py/{time}", n_dist[3].get()
+                )
+                outfile.write_data(
+                    f"{d_part_names[i]}/normed_distance/zeta/{time}", n_dist[4].get()
+                )
+                outfile.write_data(
+                    f"{d_part_names[i]}/normed_distance/delta/{time}", n_dist[5].get()
+                )
 
 
 def track_reverse_error_method(
@@ -421,7 +454,7 @@ def track_reverse_error_method(
     _context,
     outfile: H5py_writer,
 ):
-    backtracker = tracker.get_backtracker(_context=_context)
+    backtracker = tracker.get_backtracker()
 
     part_data = get_particle_data(part, _context, retidx=False)
     outfile.write_data(f"reference/initial/x", part_data.x)
@@ -436,10 +469,10 @@ def track_reverse_error_method(
     for i, t in enumerate(samples):
         print(f"Tracking {t} turns... ({i+1}/{len(samples)})")
         delta_t = t - current_t
-        tracker.track(f_part, n_turns=delta_t)
+        tracker.track(f_part, num_turns=delta_t)
         current_t = t
         r_part = f_part.copy()
-        backtracker.track(r_part, n_turns=t)
+        backtracker.track(r_part, num_turns=t)
 
         part_data = get_particle_data(r_part, _context=_context)
 
@@ -482,7 +515,7 @@ def track_tune_birkhoff(
 
     max_turns = np.max(samples)
 
-    tracker.track(part, n_turns=max_turns, turn_by_turn_monitor=True)
+    tracker.track(part, num_turns=max_turns + 1, turn_by_turn_monitor=True)
 
     # combine x and px in a complex number
     z_x = tracker.record_last_track.x + 1j * tracker.record_last_track.px
@@ -501,12 +534,7 @@ def track_tune_birkhoff(
         s_half = s // 2
         s = s_half * 2
 
-        if type(_context) == xo.ContextCpu:
-            weights = birkhoff_weights(s_half)
-        elif type(_context) == xo.ContextCupy:
-            weights = birkhoff_weights_cupy(s_half)
-        else:
-            raise NotImplementedError
+        weights = birkhoff_weights(s_half)
 
         tune_x_1 = np.sum(z_x[:, :s_half] * weights, axis=1)
         tune_x_2 = np.sum(z_x[:, s_half:s] * weights, axis=1)

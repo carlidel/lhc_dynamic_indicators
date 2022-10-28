@@ -1,0 +1,17 @@
+{
+    "sampling": {
+        "samples_per_side": 100
+    },
+    "tracking": {
+        "custom_samples": [
+            10,
+            20,
+            50,
+            100
+        ],
+        "sampling_method": "custom"
+    },
+    "output": {
+        "path": "/home/HPC/camontan/lhc_dynamic_indicators/out/quick_test"
+    }
+}
