@@ -3,6 +3,7 @@ import logging
 import warnings
 from dataclasses import dataclass
 from typing import List
+from tqdm import tqdm
 
 import cupy as cp
 import h5py
@@ -461,7 +462,7 @@ def track_log_displacement(
                 )
 
 
-def track_megno_displacement(
+def track_log_displacement_singles(
     tracker: xt.Tracker,
     part: xp.Particles,
     d_part_list: List[xp.Particles],
@@ -477,7 +478,7 @@ def track_megno_displacement(
     n_particles = len(part.x)
     event_list = compute_t_events(samples, turns_per_normalization)
     current_t = 0
-    log_displacement = [np.zeros(n_particles) for i in range(len(d_part_list))]
+    log_displacement = [cp.zeros(n_particles) for i in range(len(d_part_list))]
 
     part_data = get_particle_data(part, _context, retidx=False)
     outfile.write_data(f"reference/initial/x", part_data.x)
@@ -496,27 +497,19 @@ def track_megno_displacement(
         outfile.write_data(f"{d_part_names[i]}/initial/zeta", part_data.zeta)
         outfile.write_data(f"{d_part_names[i]}/initial/delta", part_data.delta)
 
-    for kind, time in event_list:
-        print(f"Event {kind}, at time {time}. Current time {current_t}.")
-        delta_t = time - current_t
-        if delta_t != 0:
-            tracker.track(part, num_turns=delta_t)
-            for d_part in d_part_list:
-                tracker.track(d_part, num_turns=delta_t)
-            current_t = time
+    for time in tqdm(range(1, np.max(samples) + 1)):
+        tracker.track(part, num_turns=1)
+        for i, d_part in enumerate(d_part_list):
+            tracker.track(d_part, num_turns=1)
+            log_displacement[i] += cp.log10(
+                normed_distance(part, d_part, kind="6d", metric=metric)
+                / initial_displacement
+            )
+            realign_normed_particles(
+                part, d_part, initial_displacement, kind="6d", metric=metric
+            )
 
-        if kind == "normalize":
-            for i, d_part in enumerate(d_part_list):
-                displacement = _context.nparray_from_context_array(
-                    normed_distance(part, d_part, kind="6d", metric=metric)
-                )
-
-                log_displacement[i] += np.log(displacement / initial_displacement)
-                realign_normed_particles(
-                    part, d_part, initial_displacement, kind="6d", metric=metric
-                )
-
-        elif kind == "sample":
+        if time in samples:
             part_data = get_particle_data(part, _context, retidx=False)
             outfile.write_data(f"reference/x/{time}", part_data.x)
             outfile.write_data(f"reference/px/{time}", part_data.px)
@@ -526,15 +519,10 @@ def track_megno_displacement(
             outfile.write_data(f"reference/delta/{time}", part_data.delta)
 
             for i, d_part in enumerate(d_part_list):
-                displacement = _context.nparray_from_context_array(
-                    normed_distance(part, d_part, kind="6d", metric=metric)
-                )
-                disp_to_save = log_displacement[i] + np.log(
-                    displacement / initial_displacement
-                )
-
                 part_data = get_particle_data(d_part, _context, retidx=False)
-                outfile.write_data(f"{d_part_names[i]}/log_disp/{time}", disp_to_save)
+                outfile.write_data(
+                    f"{d_part_names[i]}/log_disp/{time}", log_displacement[i].get()
+                )
                 outfile.write_data(f"{d_part_names[i]}/x/{time}", part_data.x)
                 outfile.write_data(f"{d_part_names[i]}/px/{time}", part_data.px)
                 outfile.write_data(f"{d_part_names[i]}/y/{time}", part_data.y)
@@ -561,6 +549,177 @@ def track_megno_displacement(
                 outfile.write_data(
                     f"{d_part_names[i]}/normed_distance/delta/{time}", n_dist[5].get()
                 )
+
+
+def track_log_displacement_singles_birkhoff(
+    tracker: xt.Tracker,
+    part: xp.Particles,
+    d_part_list: List[xp.Particles],
+    d_part_names: List[str],
+    initial_displacement: float,
+    samples: List[int],
+    turns_per_normalization: int,
+    _context,
+    outfile: H5py_writer,
+    kind: str = "4d",
+    metric: dict = DEFAULT_STEPS_R_MATRIX,
+):
+    n_particles = len(part.x)
+    # sort the samples
+    samples = sorted(samples)
+    birkhoff_list = [birkhoff_weights_cupy(s) for s in samples]
+
+    log_displacement = [
+        [np.zeros(n_particles) for i in range(len(d_part_list))]
+        for j in range(len(samples))
+    ]
+
+    part_data = get_particle_data(part, _context, retidx=False)
+    outfile.write_data(f"reference/initial/x", part_data.x)
+    outfile.write_data(f"reference/initial/px", part_data.px)
+    outfile.write_data(f"reference/initial/y", part_data.y)
+    outfile.write_data(f"reference/initial/py", part_data.py)
+    outfile.write_data(f"reference/initial/zeta", part_data.zeta)
+    outfile.write_data(f"reference/initial/delta", part_data.delta)
+
+    for i, d_part in enumerate(d_part_list):
+        part_data = get_particle_data(d_part, _context, retidx=False)
+        outfile.write_data(f"{d_part_names[i]}/initial/x", part_data.x)
+        outfile.write_data(f"{d_part_names[i]}/initial/px", part_data.px)
+        outfile.write_data(f"{d_part_names[i]}/initial/y", part_data.y)
+        outfile.write_data(f"{d_part_names[i]}/initial/py", part_data.py)
+        outfile.write_data(f"{d_part_names[i]}/initial/zeta", part_data.zeta)
+        outfile.write_data(f"{d_part_names[i]}/initial/delta", part_data.delta)
+
+    for time in tqdm(range(1, np.max(samples) + 1)):
+        tracker.track(part, num_turns=1)
+        for i, d_part in enumerate(d_part_list):
+            tracker.track(d_part, num_turns=1)
+
+            for j, sample in enumerate(samples):
+                if time <= samples:
+                    log_displacement[j][i] += (
+                        cp.log10(
+                            normed_distance(part, d_part, kind="6d", metric=metric)
+                            / initial_displacement
+                        )
+                        * birkhoff_list[j][time - 1]
+                    )
+
+            realign_normed_particles(
+                part, d_part, initial_displacement, kind="6d", metric=metric
+            )
+
+        if time in samples:
+            j = samples.index(time)
+            part_data = get_particle_data(part, _context, retidx=False)
+            outfile.write_data(f"reference/x/{time}", part_data.x)
+            outfile.write_data(f"reference/px/{time}", part_data.px)
+            outfile.write_data(f"reference/y/{time}", part_data.y)
+            outfile.write_data(f"reference/py/{time}", part_data.py)
+            outfile.write_data(f"reference/zeta/{time}", part_data.zeta)
+            outfile.write_data(f"reference/delta/{time}", part_data.delta)
+
+            for i, d_part in enumerate(d_part_list):
+                part_data = get_particle_data(d_part, _context, retidx=False)
+                outfile.write_data(
+                    f"{d_part_names[i]}/log_disp/{time}", log_displacement[j][i].get()
+                )
+                outfile.write_data(f"{d_part_names[i]}/x/{time}", part_data.x)
+                outfile.write_data(f"{d_part_names[i]}/px/{time}", part_data.px)
+                outfile.write_data(f"{d_part_names[i]}/y/{time}", part_data.y)
+                outfile.write_data(f"{d_part_names[i]}/py/{time}", part_data.py)
+                outfile.write_data(f"{d_part_names[i]}/zeta/{time}", part_data.zeta)
+                outfile.write_data(f"{d_part_names[i]}/delta/{time}", part_data.delta)
+
+                n_dist, n_val = normed_direction(part, d_part, kind="6d")
+                outfile.write_data(
+                    f"{d_part_names[i]}/normed_distance/x/{time}", n_dist[0].get()
+                )
+                outfile.write_data(
+                    f"{d_part_names[i]}/normed_distance/px/{time}", n_dist[1].get()
+                )
+                outfile.write_data(
+                    f"{d_part_names[i]}/normed_distance/y/{time}", n_dist[2].get()
+                )
+                outfile.write_data(
+                    f"{d_part_names[i]}/normed_distance/py/{time}", n_dist[3].get()
+                )
+                outfile.write_data(
+                    f"{d_part_names[i]}/normed_distance/zeta/{time}", n_dist[4].get()
+                )
+                outfile.write_data(
+                    f"{d_part_names[i]}/normed_distance/delta/{time}", n_dist[5].get()
+                )
+
+
+def track_megno_displacement(
+    tracker: xt.Tracker,
+    part: xp.Particles,
+    d_part_list: List[xp.Particles],
+    d_part_names: List[str],
+    initial_displacement: float,
+    samples: List[int],
+    turns_per_normalization: int,
+    _context,
+    outfile: H5py_writer,
+    kind: str = "4d",
+    metric: dict = DEFAULT_STEPS_R_MATRIX,
+):
+    n_particles = len(part.x)
+    event_list = compute_t_events(samples, turns_per_normalization)
+    current_t = 0
+    displacement_1 = [cp.ones(n_particles) for i in range(len(d_part_list))]
+    displacement_2 = [cp.ones(n_particles) for i in range(len(d_part_list))]
+    megno_vals = [cp.zeros(n_particles) for i in range(len(d_part_list))]
+
+    part_data = get_particle_data(part, _context, retidx=False)
+    outfile.write_data(f"reference/initial/x", part_data.x)
+    outfile.write_data(f"reference/initial/px", part_data.px)
+    outfile.write_data(f"reference/initial/y", part_data.y)
+    outfile.write_data(f"reference/initial/py", part_data.py)
+    outfile.write_data(f"reference/initial/zeta", part_data.zeta)
+    outfile.write_data(f"reference/initial/delta", part_data.delta)
+
+    for i, d_part in enumerate(d_part_list):
+        part_data = get_particle_data(d_part, _context, retidx=False)
+        outfile.write_data(f"{d_part_names[i]}/initial/x", part_data.x)
+        outfile.write_data(f"{d_part_names[i]}/initial/px", part_data.px)
+        outfile.write_data(f"{d_part_names[i]}/initial/y", part_data.y)
+        outfile.write_data(f"{d_part_names[i]}/initial/py", part_data.py)
+        outfile.write_data(f"{d_part_names[i]}/initial/zeta", part_data.zeta)
+        outfile.write_data(f"{d_part_names[i]}/initial/delta", part_data.delta)
+
+    for t in tqdm(range(1, np.max(samples) + 1)):
+        tracker.track(part, num_turns=1)
+        for i, d_part in enumerate(d_part_list):
+            tracker.track(d_part, num_turns=1)
+            displacement_1[i] += normed_distance(part, d_part, kind="6d", metric=metric)
+            realign_normed_particles(
+                part, d_part, initial_displacement, kind="6d", metric=metric
+            )
+            megno_vals[i] += cp.log10(displacement_1[i] / displacement_2[i]) * t
+            displacement_2[i] = displacement_1[i]
+
+        if t in samples:
+            print(f"Saving data for sample {t}")
+            part_data = get_particle_data(part, _context, retidx=False)
+            outfile.write_data(f"reference/x/{t}", part_data.x)
+            outfile.write_data(f"reference/px/{t}", part_data.px)
+            outfile.write_data(f"reference/y/{t}", part_data.y)
+            outfile.write_data(f"reference/py/{t}", part_data.py)
+            outfile.write_data(f"reference/zeta/{t}", part_data.zeta)
+            outfile.write_data(f"reference/delta/{t}", part_data.delta)
+
+            for i, d_part in enumerate(d_part_list):
+                part_data = get_particle_data(d_part, _context, retidx=False)
+                outfile.write_data(f"{d_part_names[i]}/x/{t}", part_data.x)
+                outfile.write_data(f"{d_part_names[i]}/px/{t}", part_data.px)
+                outfile.write_data(f"{d_part_names[i]}/y/{t}", part_data.y)
+                outfile.write_data(f"{d_part_names[i]}/py/{t}", part_data.py)
+                outfile.write_data(f"{d_part_names[i]}/zeta/{t}", part_data.zeta)
+                outfile.write_data(f"{d_part_names[i]}/delta/{t}", part_data.delta)
+                outfile.write_data(f"{d_part_names[i]}/megno/{t}", megno_vals[i].get())
 
 
 def track_reverse_error_method(
