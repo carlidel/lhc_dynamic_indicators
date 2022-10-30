@@ -566,7 +566,7 @@ def track_log_displacement_singles_birkhoff(
     birkhoff_list = [birkhoff_weights_cupy(s) for s in samples]
 
     log_displacement = [
-        [np.zeros(n_particles) for i in range(len(d_part_list))]
+        [cp.zeros(n_particles) for i in range(len(d_part_list))]
         for j in range(len(samples))
     ]
 
