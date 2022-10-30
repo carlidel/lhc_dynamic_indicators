@@ -593,7 +593,7 @@ def track_log_displacement_singles_birkhoff(
             tracker.track(d_part, num_turns=1)
 
             for j, sample in enumerate(samples):
-                if time <= samples:
+                if time <= sample:
                     log_displacement[j][i] += (
                         cp.log10(
                             normed_distance(part, d_part, kind="6d", metric=metric)
