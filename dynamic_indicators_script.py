@@ -3,7 +3,6 @@ import logging
 import warnings
 from dataclasses import dataclass
 from typing import List
-from tqdm import tqdm
 
 import cupy as cp
 import h5py
@@ -14,6 +13,7 @@ import xtrack as xt  # To avoid circular imports
 from numba import njit
 from scipy.constants import c as clight
 from scipy.optimize import fsolve
+from tqdm import tqdm
 
 ## FROM GIANNI'S CODE ############################
 
@@ -469,15 +469,12 @@ def track_log_displacement_singles(
     d_part_names: List[str],
     initial_displacement: float,
     samples: List[int],
-    turns_per_normalization: int,
     _context,
     outfile: H5py_writer,
     kind: str = "4d",
     metric: dict = DEFAULT_STEPS_R_MATRIX,
 ):
     n_particles = len(part.x)
-    event_list = compute_t_events(samples, turns_per_normalization)
-    current_t = 0
     log_displacement = [cp.zeros(n_particles) for i in range(len(d_part_list))]
 
     part_data = get_particle_data(part, _context, retidx=False)
@@ -558,7 +555,6 @@ def track_log_displacement_singles_birkhoff(
     d_part_names: List[str],
     initial_displacement: float,
     samples: List[int],
-    turns_per_normalization: int,
     _context,
     outfile: H5py_writer,
     kind: str = "4d",
@@ -660,15 +656,12 @@ def track_megno_displacement(
     d_part_names: List[str],
     initial_displacement: float,
     samples: List[int],
-    turns_per_normalization: int,
     _context,
     outfile: H5py_writer,
     kind: str = "4d",
     metric: dict = DEFAULT_STEPS_R_MATRIX,
 ):
     n_particles = len(part.x)
-    event_list = compute_t_events(samples, turns_per_normalization)
-    current_t = 0
     displacement_1 = [cp.ones(n_particles) for i in range(len(d_part_list))]
     displacement_2 = [cp.ones(n_particles) for i in range(len(d_part_list))]
     megno_vals = [cp.zeros(n_particles) for i in range(len(d_part_list))]
