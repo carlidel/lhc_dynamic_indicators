@@ -1,9 +1,9 @@
 import itertools
 
 mask_file_list = [
-    "/afs/cern.ch/work/c/camontan/public/lhc_dynamic_indicators/configs/masks1.json",
-    "/afs/cern.ch/work/c/camontan/public/lhc_dynamic_indicators/configs/masks2.json",
-    "/afs/cern.ch/work/c/camontan/public/lhc_dynamic_indicators/configs/masks3.json",
+    "/afs/cern.ch/work/c/camontan/public/lhc_dynamic_indicators/configs/mask1.json",
+    "/afs/cern.ch/work/c/camontan/public/lhc_dynamic_indicators/configs/mask2.json",
+    "/afs/cern.ch/work/c/camontan/public/lhc_dynamic_indicators/configs/mask3.json",
 ]
 
 tracking_config_path = "/afs/cern.ch/work/c/camontan/public/lhc_dynamic_indicators/configs/tracking_htcondor.json"
