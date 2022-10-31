@@ -8,6 +8,6 @@
         "sampling_method": "log"
     },
     "output": {
-        "path": "/home/HPC/camontan/lhc_dynamic_indicators/out/general_scan"
+        "path": "./"
     }
 }
