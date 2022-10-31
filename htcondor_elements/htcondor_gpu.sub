@@ -7,7 +7,7 @@ output     = out/exp.$(ClusterId).$(ProcId).out
 error      = err/exp.$(ClusterId).$(ProcId).err
 log        = log/exp.$(ClusterId).log
 
-transfer_input_files = "/afs/cern.ch/work/c/public/lhc_dynamic_indicators/dynamic_indicators_script.py"
+transfer_input_files = ../dynamic_indicators_script.py
 transfer_output_files = ""
 
 #request_disk = 25000000
