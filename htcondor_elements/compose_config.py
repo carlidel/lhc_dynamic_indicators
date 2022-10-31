@@ -26,4 +26,4 @@ for i, (mask, zeta, track) in enumerate(
     itertools.product(mask_file_list, zeta_list, tracking_options_list)
 ):
     with open("configs/all_jobs_no_tune.txt", "a" if i > 0 else "w") as f:
-        f.write(f'"{mask}", "{tracking_config_path}", "{track}", "{zeta}"\n')
+        f.write(f"{mask}, {tracking_config_path}, {track}, {zeta}\n")
