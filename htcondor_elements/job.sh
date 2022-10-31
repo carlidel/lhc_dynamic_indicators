@@ -16,7 +16,7 @@ echo $2
 echo $3
 echo $4
 
-python3 /afs/cern.ch/work/c/public/lhc_dynamic_indicators/run_sim.py --mask $1 --tracking $2 --kind $3 --output $3 --zeta $4
+python3 /afs/cern.ch/work/c/camontan/public/lhc_dynamic_indicators/run_sim.py --mask $1 --tracking $2 --kind $3 --output $3 --zeta $4
 
 eos cp *.h5 /eos/user/c/camontan/lhc_dynamic_data
 
