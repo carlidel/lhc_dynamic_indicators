@@ -58,7 +58,7 @@ with open(args.tracking, "r") as f:
 h5py_writer = H5py_writer(
     os.path.join(
         tracking_config["output"]["path"],
-        args.output + "_" + mask_config["name"] + ".h5",
+        args.output + "_" + mask_config["name"] + "_zeta_" + args.zeta + ".h5",
     )
 )
 
