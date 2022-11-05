@@ -475,6 +475,7 @@ def track_log_displacement_birkhoff(
     kind: str = "4d",
     metric: dict = DEFAULT_STEPS_R_MATRIX,
 ):
+    samples = [s for s in samples]
     n_particles = len(part.x)
     event_list = compute_t_events(samples, turns_per_normalization)
     current_t = 0
