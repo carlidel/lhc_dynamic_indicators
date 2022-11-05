@@ -11,12 +11,14 @@ tracking_config_path = "/afs/cern.ch/work/c/camontan/public/lhc_dynamic_indicato
 zeta_list = ["min", "max", "avg"]
 
 tracking_options_list = [
-    "stability",
+    # "stability",
     "log_displacement_singles",
     "log_displacement_singles_birkhoff",
+    "log_displacement",
+    "log_displacement_birkhoff",
     "megno_displacement",
-    "rem",
-    "tune_birkhoff",
+    # "rem",
+    # "tune_birkhoff",
 ]
 
 
