@@ -548,7 +548,7 @@ def track_log_displacement_birkhoff(
                 displacement = _context.nparray_from_context_array(
                     normed_distance(part, d_part, kind="6d", metric=metric)
                 )
-                disp_to_save = log_displacement[j][i]
+                disp_to_save = log_displacement[j][i].get()
                 part_data = get_particle_data(d_part, _context, retidx=False)
                 outfile.write_data(f"{d_part_names[i]}/log_disp/{time}", disp_to_save)
                 outfile.write_data(f"{d_part_names[i]}/x/{time}", part_data.x)
