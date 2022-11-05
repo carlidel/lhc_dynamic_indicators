@@ -519,8 +519,6 @@ def track_log_displacement_birkhoff(
                     normed_distance(part, d_part, kind="6d", metric=metric)
                 )
 
-                log_displacement[i] += np.log10(displacement / initial_displacement)
-
                 for j, sample in enumerate(samples):
                     if time <= sample:
                         log_displacement[j][i] += (
