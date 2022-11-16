@@ -914,3 +914,53 @@ def track_tune_birkhoff(
         outfile.write_data(f"tune/x/{s_half}/{s}", tune_x_2)
         outfile.write_data(f"tune/y/0/{s_half}", tune_y_1)
         outfile.write_data(f"tune/y/{s_half}/{s}", tune_y_2)
+
+
+def track_tune_birkhoff_CPU(
+    tracker: xt.Tracker,
+    part: xp.Particles,
+    samples: List[int],
+    _context,
+    outfile: H5py_writer,
+):
+    part_data = get_particle_data(part, _context, retidx=False)
+    outfile.write_data(f"reference/initial/x", part_data.x)
+    outfile.write_data(f"reference/initial/px", part_data.px)
+    outfile.write_data(f"reference/initial/y", part_data.y)
+    outfile.write_data(f"reference/initial/py", part_data.py)
+    outfile.write_data(f"reference/initial/zeta", part_data.zeta)
+    outfile.write_data(f"reference/initial/delta", part_data.delta)
+
+    max_turns = np.max(samples)
+
+    tracker.track(part, num_turns=max_turns + 1, turn_by_turn_monitor=True)
+
+    # combine x and px in a complex number
+    z_x = tracker.record_last_track.x + 1j * tracker.record_last_track.px
+    z_y = tracker.record_last_track.y + 1j * tracker.record_last_track.py
+
+    z_x = np.angle(z_x)
+    z_y = np.angle(z_y)
+
+    z_x = z_x[:, 1:] - z_x[:, :-1]
+    z_y = z_y[:, 1:] - z_y[:, :-1]
+
+    z_x[z_x < 0] += 2 * np.pi
+    z_y[z_y < 0] += 2 * np.pi
+
+    for i, s in enumerate(samples):
+        s_half = s // 2
+        s = s_half * 2
+
+        weights = birkhoff_weights(s_half)
+
+        tune_x_1 = np.sum(z_x[:, :s_half] * weights, axis=1)
+        tune_x_2 = np.sum(z_x[:, s_half:s] * weights, axis=1)
+
+        tune_y_1 = np.sum(z_y[:, :s_half] * weights, axis=1)
+        tune_y_2 = np.sum(z_y[:, s_half:s] * weights, axis=1)
+
+        outfile.write_data(f"tune/x/0/{s_half}", tune_x_1)
+        outfile.write_data(f"tune/x/{s_half}/{s}", tune_x_2)
+        outfile.write_data(f"tune/y/0/{s_half}", tune_y_1)
+        outfile.write_data(f"tune/y/{s_half}/{s}", tune_y_2)

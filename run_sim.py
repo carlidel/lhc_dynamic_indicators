@@ -26,6 +26,7 @@ from dynamic_indicators_script import (
     track_reverse_error_method,
     track_stability,
     track_tune_birkhoff,
+    track_tune_birkhoff_CPU,
 )
 
 # create parser
@@ -42,10 +43,27 @@ parser.add_argument(
     choices=["min", "max", "avg"],
 )
 
-context = xo.ContextCupy()
+parser.add_argument(  # for tune_birkhoff
+    "--sample_num",
+    type=int,
+    help="for tune_birkhoff, number of sample_partition to use",
+    default=0,
+)
+parser.add_argument(  # for tune_birkhoff
+    "--sample_size",
+    type=int,
+    help="for tune_birkhoff, size of samples to use",
+    default=150,
+)
 
 # parse arguments
 args = parser.parse_args()
+
+if args.kind == "tune_birkhoff":
+    context = xo.ContextCpu()
+else:
+    context = xo.ContextCupy()
+
 
 # load mask config
 with open(args.mask, "r") as f:
@@ -86,6 +104,16 @@ y_linspace = np.linspace(
 xx, yy = np.meshgrid(x_linspace, y_linspace)
 xx = xx.flatten()
 yy = yy.flatten()
+
+if args.kind == "tune_birkhoff":
+    n_particles = xx.size
+    chunk_points = np.arange(0, n_particles, args.sample_size)
+    xx = xx[
+        chunk_points[args.sample_num] : chunk_points[args.sample_num] + args.sample_size
+    ]
+    yy = yy[
+        chunk_points[args.sample_num] : chunk_points[args.sample_num] + args.sample_size
+    ]
 
 if args.zeta == "min":
     zeta = mask_config["zeta_min"]
@@ -236,7 +264,7 @@ elif args.kind == "megno_displacement":
         h5py_writer,
     )
 elif args.kind == "tune_birkhoff":
-    track_tune_birkhoff(
+    track_tune_birkhoff_CPU(
         tracker,
         part,
         t_samples,
