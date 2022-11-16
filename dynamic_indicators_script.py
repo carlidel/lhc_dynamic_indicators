@@ -941,6 +941,7 @@ def track_tune_birkhoff_CPU(
     outfile.write_data(f"reference/initial/delta", part_data.delta)
 
     max_turns = np.max(samples)
+    print(f"Tracking {max_turns} turns...")
 
     tracker.track(part, num_turns=max_turns + 1, turn_by_turn_monitor=True)
 
@@ -957,7 +958,9 @@ def track_tune_birkhoff_CPU(
     z_x[z_x < 0] += 2 * np.pi
     z_y[z_y < 0] += 2 * np.pi
 
+    print("Done tracking, starting tune calculation")
     for i, s in enumerate(samples):
+        print(f"Calculating tune for {s} turns... ({i+1}/{len(samples)})")
         s_half = s // 2
         s = s_half * 2
 
