@@ -4,8 +4,8 @@ import warnings
 from dataclasses import dataclass
 from typing import List
 
-import cupy as cp
 import h5py
+import numba.cuda as cuda
 import numpy as np
 import xobjects as xo
 import xpart as xp
@@ -14,6 +14,15 @@ from numba import njit
 from scipy.constants import c as clight
 from scipy.optimize import fsolve
 from tqdm import tqdm
+
+# check if cuda is available
+if cuda.is_available():
+    import cupy as cp
+
+    print("CUDA is available")
+else:
+    print("CUDA is not available")
+
 
 ## FROM GIANNI'S CODE ############################
 
