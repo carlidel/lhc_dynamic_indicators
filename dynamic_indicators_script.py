@@ -202,12 +202,8 @@ def realign_normed_particles(
         part_target.px = module * norm_d[1] * metric["dpx"] + part_ref.px
         part_target.y = module * norm_d[2] * metric["dy"] + part_ref.y
         part_target.py = module * norm_d[3] * metric["dpy"] + part_ref.py
-        part_target.zeta = module * norm_d[4] * metric[
-            "dzeta"
-        ] + part_ref.zeta
-        part_target.delta = module * norm_d[5] * metric[
-            "ddelta"
-        ] + part_ref.delta
+        part_target.zeta = module * norm_d[4] * metric["dzeta"] + part_ref.zeta
+        part_target.delta = module * norm_d[5] * metric["ddelta"] + part_ref.delta
     elif kind == "x-px":
         part_target.x = module * norm_d[0] * metric["dx"] + part_ref.x
         part_target.px = module * norm_d[1] * metric["dpx"] + part_ref.px
@@ -215,12 +211,8 @@ def realign_normed_particles(
         part_target.y = module * norm_d[0] * metric["dy"] + part_ref.y
         part_target.py = module * norm_d[1] * metric["dpy"] + part_ref.py
     elif kind == "zeta-delta":
-        part_target.zeta = module * norm_d[0] * metric[
-            "dzeta"
-        ] + part_ref.zeta
-        part_target.delta = module * norm_d[1] * metric[
-            "ddelta"
-        ] + part_ref.delta
+        part_target.zeta = module * norm_d[0] * metric["dzeta"] + part_ref.zeta
+        part_target.delta = module * norm_d[1] * metric["ddelta"] + part_ref.delta
     else:
         raise ValueError("Unknown kind of distance")
 
@@ -485,7 +477,9 @@ def track_log_displacement_birkhoff(
         [cp.zeros(n_particles) for i in range(len(d_part_list))]
         for j in range(len(samples))
     ]
-    birkhoff_list = [birkhoff_weights_cupy((s//turns_per_normalization)) for s in samples]
+    birkhoff_list = [
+        birkhoff_weights_cupy((s // turns_per_normalization)) for s in samples
+    ]
 
     part_data = get_particle_data(part, _context, retidx=False)
     outfile.write_data(f"reference/initial/x", part_data.x)
@@ -526,7 +520,10 @@ def track_log_displacement_birkhoff(
                                 normed_distance(part, d_part, kind="6d", metric=metric)
                                 / initial_displacement
                             )
-                            * birkhoff_list[j][(time//turns_per_normalization - 1)%len(birkhoff_list[j])]
+                            * birkhoff_list[j][
+                                (time // turns_per_normalization - 1)
+                                % len(birkhoff_list[j])
+                            ]
                         )
                 realign_normed_particles(
                     part, d_part, initial_displacement, kind="6d", metric=metric
@@ -778,7 +775,8 @@ def track_megno_displacement(
 ):
     n_particles = len(part.x)
     displacement_1 = [cp.ones(n_particles) for i in range(len(d_part_list))]
-    displacement_2 = [cp.ones(n_particles) for i in range(len(d_part_list))]
+    # displacement_2 = [cp.ones(n_particles) for i in range(len(d_part_list))]
+    y_vals = [cp.zeros(n_particles) for i in range(len(d_part_list))]
     megno_vals = [cp.zeros(n_particles) for i in range(len(d_part_list))]
 
     part_data = get_particle_data(part, _context, retidx=False)
@@ -806,8 +804,9 @@ def track_megno_displacement(
             realign_normed_particles(
                 part, d_part, initial_displacement, kind="6d", metric=metric
             )
-            megno_vals[i] += cp.log10(displacement_1[i] / displacement_2[i]) * t
-            displacement_2[i] = displacement_1[i]
+            y_vals[i] += 2 * cp.log10(displacement_1) * (t**2)
+            megno_vals[i] += (1 / (t) ** 3) * y_vals[i]
+            # displacement_2[i] = displacement_1[i]
 
         if t in samples:
             print(f"Saving data for sample {t}")
