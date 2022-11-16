@@ -800,11 +800,11 @@ def track_megno_displacement(
         tracker.track(part, num_turns=1)
         for i, d_part in enumerate(d_part_list):
             tracker.track(d_part, num_turns=1)
-            displacement_1[i] += normed_distance(part, d_part, kind="6d", metric=metric)
+            displacement_1[i] = normed_distance(part, d_part, kind="6d", metric=metric)
             realign_normed_particles(
                 part, d_part, initial_displacement, kind="6d", metric=metric
             )
-            y_vals[i] += 2 * cp.log10(displacement_1) * (t**2)
+            y_vals[i] += 2 * cp.log10(displacement_1[i]) * (t**2)
             megno_vals[i] += (1 / (t) ** 3) * y_vals[i]
             # displacement_2[i] = displacement_1[i]
 
