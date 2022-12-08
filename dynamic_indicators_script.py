@@ -931,6 +931,7 @@ def track_tune_birkhoff_CPU(
     samples: List[int],
     _context,
     outfile: H5py_writer,
+    remove_mean: bool = True,
 ):
     part_data = get_particle_data(part, _context, retidx=False)
     outfile.write_data(f"reference/initial/x", part_data.x)
@@ -966,11 +967,25 @@ def track_tune_birkhoff_CPU(
 
         weights = birkhoff_weights(s_half)
 
-        tune_x_1 = np.sum(z_x[:, :s_half] * weights, axis=1)
-        tune_x_2 = np.sum(z_x[:, s_half:s] * weights, axis=1)
+        if remove_mean:
+            z_x_1 = z_x[:, :s_half] - np.mean(z_x[:, :s_half], axis=1)[:, None]
+            z_x_2 = z_x[:, s_half:s] - np.mean(z_x[:, s_half:s], axis=1)[:, None]
+        else:
+            z_x_1 = z_x[:, :s_half]
+            z_x_2 = z_x[:, s_half:s]
 
-        tune_y_1 = np.sum(z_y[:, :s_half] * weights, axis=1)
-        tune_y_2 = np.sum(z_y[:, s_half:s] * weights, axis=1)
+        tune_x_1 = np.sum(z_x_1 * weights, axis=1)
+        tune_x_2 = np.sum(z_x_2 * weights, axis=1)
+
+        if remove_mean:
+            z_y_1 = z_y[:, :s_half] - np.mean(z_y[:, :s_half], axis=1)[:, None]
+            z_y_2 = z_y[:, s_half:s] - np.mean(z_y[:, s_half:s], axis=1)[:, None]
+        else:
+            z_y_1 = z_y[:, :s_half]
+            z_y_2 = z_y[:, s_half:s]
+
+        tune_y_1 = np.sum(z_y_1 * weights, axis=1)
+        tune_y_2 = np.sum(z_y_2 * weights, axis=1)
 
         outfile.write_data(f"tune/x/0/{s_half}", tune_x_1)
         outfile.write_data(f"tune/x/{s_half}/{s}", tune_x_2)

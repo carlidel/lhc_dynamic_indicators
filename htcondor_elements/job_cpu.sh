@@ -21,6 +21,6 @@ echo $7
 
 python3 /afs/cern.ch/work/c/camontan/public/lhc_dynamic_indicators/run_sim.py --mask $1 --tracking $2 --kind $3 --output $7 --zeta $4 --sample_size $5 --sample_num $6
 
-eos cp *.h5 /eos/user/c/camontan/lhc_dynamic_data
+eos cp *.h5 /eos/user/c/camontan/lhc_dynamic_data_new
 
 rm *.h5
