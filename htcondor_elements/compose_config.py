@@ -16,7 +16,8 @@ tracking_options_list = [
     # "log_displacement_singles_birkhoff",
     # "log_displacement",
     # "log_displacement_birkhoff",
-    "megno_displacement",
+    # "megno_displacement",
+    "megno_birkhoff_displacement",
     # "rem",
     # "tune_birkhoff",
 ]

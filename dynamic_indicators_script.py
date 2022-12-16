@@ -838,6 +838,91 @@ def track_megno_displacement(
                 outfile.write_data(f"{d_part_names[i]}/megno/{t}", megno_vals[i].get())
 
 
+def track_megno_birkhoff_displacement(
+    tracker: xt.Tracker,
+    part: xp.Particles,
+    d_part_list: List[xp.Particles],
+    d_part_names: List[str],
+    initial_displacement: float,
+    samples: List[int],
+    _context,
+    outfile: H5py_writer,
+    kind: str = "4d",
+    metric: dict = DEFAULT_STEPS_R_MATRIX,
+):
+    n_particles = len(part.x)
+    samples = sorted(samples)
+    birkhoff_list = [birkhoff_weights_cupy(s) for s in samples]
+
+    displacement_1 = [cp.ones(n_particles) for i in range(len(d_part_list))]
+    # displacement_2 = [cp.ones(n_particles) for i in range(len(d_part_list))]
+    y_vals = [cp.zeros(n_particles) for i in range(len(d_part_list))]
+    megno_vals = [cp.zeros(n_particles) for i in range(len(d_part_list))]
+    megno_vals_birk = [
+        [cp.zeros(n_particles) for i in range(len(d_part_list))]
+        for j in range(len(samples))
+    ]
+
+    part_data = get_particle_data(part, _context, retidx=False)
+    outfile.write_data(f"reference/initial/x", part_data.x)
+    outfile.write_data(f"reference/initial/px", part_data.px)
+    outfile.write_data(f"reference/initial/y", part_data.y)
+    outfile.write_data(f"reference/initial/py", part_data.py)
+    outfile.write_data(f"reference/initial/zeta", part_data.zeta)
+    outfile.write_data(f"reference/initial/delta", part_data.delta)
+
+    for i, d_part in enumerate(d_part_list):
+        part_data = get_particle_data(d_part, _context, retidx=False)
+        outfile.write_data(f"{d_part_names[i]}/initial/x", part_data.x)
+        outfile.write_data(f"{d_part_names[i]}/initial/px", part_data.px)
+        outfile.write_data(f"{d_part_names[i]}/initial/y", part_data.y)
+        outfile.write_data(f"{d_part_names[i]}/initial/py", part_data.py)
+        outfile.write_data(f"{d_part_names[i]}/initial/zeta", part_data.zeta)
+        outfile.write_data(f"{d_part_names[i]}/initial/delta", part_data.delta)
+
+    for t in tqdm(range(1, np.max(samples) + 1)):
+        tracker.track(part, num_turns=1)
+        for i, d_part in enumerate(d_part_list):
+            tracker.track(d_part, num_turns=1)
+            displacement_1[i] = normed_distance(part, d_part, kind="6d", metric=metric)
+            realign_normed_particles(
+                part, d_part, initial_displacement, kind="6d", metric=metric
+            )
+            y_vals[i] += 2 * cp.log10(displacement_1[i]) * (t**2)
+            # NB: HERE WE PUT A STANDARD MEAN TO MAKE IT COMPARABLE WITH BIRKHOFF
+            megno_vals[i] += (1 / t) * y_vals[i]
+
+            for j, sample in enumerate(samples):
+                if t <= sample:
+                    megno_vals_birk[j][i] += y_vals[i] * birkhoff_list[j][t - 1]
+
+            # displacement_2[i] = displacement_1[i]
+
+        if t in samples:
+            j = samples.index(t)
+            print(f"Saving data for sample {t}")
+            part_data = get_particle_data(part, _context, retidx=False)
+            outfile.write_data(f"reference/x/{t}", part_data.x)
+            outfile.write_data(f"reference/px/{t}", part_data.px)
+            outfile.write_data(f"reference/y/{t}", part_data.y)
+            outfile.write_data(f"reference/py/{t}", part_data.py)
+            outfile.write_data(f"reference/zeta/{t}", part_data.zeta)
+            outfile.write_data(f"reference/delta/{t}", part_data.delta)
+
+            for i, d_part in enumerate(d_part_list):
+                part_data = get_particle_data(d_part, _context, retidx=False)
+                outfile.write_data(f"{d_part_names[i]}/x/{t}", part_data.x)
+                outfile.write_data(f"{d_part_names[i]}/px/{t}", part_data.px)
+                outfile.write_data(f"{d_part_names[i]}/y/{t}", part_data.y)
+                outfile.write_data(f"{d_part_names[i]}/py/{t}", part_data.py)
+                outfile.write_data(f"{d_part_names[i]}/zeta/{t}", part_data.zeta)
+                outfile.write_data(f"{d_part_names[i]}/delta/{t}", part_data.delta)
+                outfile.write_data(f"{d_part_names[i]}/megno/{t}", megno_vals[i].get())
+                outfile.write_data(
+                    f"{d_part_names[i]}/megno_birk/{t}", megno_vals_birk[j][i].get()
+                )
+
+
 def track_reverse_error_method(
     tracker: xt.Tracker,
     part: xp.Particles,

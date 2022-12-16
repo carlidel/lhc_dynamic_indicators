@@ -22,6 +22,7 @@ from dynamic_indicators_script import (
     track_log_displacement_birkhoff,
     track_log_displacement_singles,
     track_log_displacement_singles_birkhoff,
+    track_megno_birkhoff_displacement,
     track_megno_displacement,
     track_reverse_error_method,
     track_stability,
@@ -254,6 +255,24 @@ elif args.kind == "megno_displacement":
     part_delta = add_normed_displacement_to_particles(part, 1.0, "delta")
 
     track_megno_displacement(
+        tracker,
+        part,
+        [part_x, part_y, part_px, part_py, part_zeta, part_delta],
+        ["disp/x", "disp/y", "disp/px", "disp/py", "disp/zeta", "disp/delta"],
+        1.0,
+        t_samples,
+        context,
+        h5py_writer,
+    )
+elif args.kind == "megno_birkhoff_displacement":
+    part_x = add_normed_displacement_to_particles(part, 1.0, "x")
+    part_y = add_normed_displacement_to_particles(part, 1.0, "y")
+    part_px = add_normed_displacement_to_particles(part, 1.0, "px")
+    part_py = add_normed_displacement_to_particles(part, 1.0, "py")
+    part_zeta = add_normed_displacement_to_particles(part, 1.0, "zeta")
+    part_delta = add_normed_displacement_to_particles(part, 1.0, "delta")
+
+    track_megno_birkhoff_displacement(
         tracker,
         part,
         [part_x, part_y, part_px, part_py, part_zeta, part_delta],
