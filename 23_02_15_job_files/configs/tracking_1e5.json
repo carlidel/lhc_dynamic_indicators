@@ -1,8 +1,8 @@
 {
     "samples_per_side": 300,
 
-    "max_iterations": 1000000,
-    "time_samples": 61,
+    "max_iterations": 100000,
+    "time_samples": 53,
     "sampling_method": "log",
 
     "outpath": "./"
