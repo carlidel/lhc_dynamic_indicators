@@ -12,7 +12,7 @@ import xpart as xp
 import xtrack as xt
 from tqdm import tqdm
 
-from dynamic_indicators import H5py_writer
+from dynamic_indicators import H5pyWriter
 
 context = xo.ContextCupy()
 MASK_PATH = "masks/"

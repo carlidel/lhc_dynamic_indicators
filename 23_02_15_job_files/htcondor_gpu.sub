@@ -1,0 +1,23 @@
+universe   = vanilla
+
+executable = job.sh
+arguments  = $(Mask) $(TrackingConfig) $(TrackOption) $(Zeta)
+
+output     = out/exp.$(ClusterId).$(ProcId).out
+error      = err/exp.$(ClusterId).$(ProcId).err
+log        = log/exp.$(ClusterId).log
+
+transfer_input_files = ../normed_dynamic_indicators.py
+transfer_output_files = ""
+
+#request_disk = 25000000
+
+requirements = regexp("(V100|A100)", Target.CUDADeviceName)
+
+request_GPUs = 1
+
++JobFlavour = "testmatch"
+
++AccountingGroup = "group_u_BE.ABP.normal"
+
+queue Mask,TrackingConfig,TrackOption,Zeta from configs/all_jobs_no_tune.txt

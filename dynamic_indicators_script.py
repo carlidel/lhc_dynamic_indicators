@@ -226,7 +226,7 @@ def realign_normed_particles(
         raise ValueError("Unknown kind of distance")
 
 
-class H5py_writer:
+class H5pyWriter:
     def __init__(self, filename, compression=None):
         self.filename = filename
         self.compression = compression
@@ -345,7 +345,7 @@ def track_stability(
     part: xp.Particles,
     n_turns: int,
     _context,
-    outfile: H5py_writer,
+    outfile: H5pyWriter,
 ):
     start = datetime.datetime.now()
     print(f"Starting at: {start}")
@@ -370,7 +370,7 @@ def track_log_displacement(
     samples: List[int],
     turns_per_normalization: int,
     _context,
-    outfile: H5py_writer,
+    outfile: H5pyWriter,
     kind: str = "4d",
     metric: dict = DEFAULT_STEPS_R_MATRIX,
 ):
@@ -472,7 +472,7 @@ def track_log_displacement_birkhoff(
     samples: List[int],
     turns_per_normalization: int,
     _context,
-    outfile: H5py_writer,
+    outfile: H5pyWriter,
     kind: str = "4d",
     metric: dict = DEFAULT_STEPS_R_MATRIX,
 ):
@@ -591,7 +591,7 @@ def track_log_displacement_singles(
     initial_displacement: float,
     samples: List[int],
     _context,
-    outfile: H5py_writer,
+    outfile: H5pyWriter,
     kind: str = "4d",
     metric: dict = DEFAULT_STEPS_R_MATRIX,
 ):
@@ -677,7 +677,7 @@ def track_log_displacement_singles_birkhoff(
     initial_displacement: float,
     samples: List[int],
     _context,
-    outfile: H5py_writer,
+    outfile: H5pyWriter,
     kind: str = "4d",
     metric: dict = DEFAULT_STEPS_R_MATRIX,
 ):
@@ -778,7 +778,7 @@ def track_megno_displacement(
     initial_displacement: float,
     samples: List[int],
     _context,
-    outfile: H5py_writer,
+    outfile: H5pyWriter,
     kind: str = "4d",
     metric: dict = DEFAULT_STEPS_R_MATRIX,
 ):
@@ -846,7 +846,7 @@ def track_megno_birkhoff_displacement(
     initial_displacement: float,
     samples: List[int],
     _context,
-    outfile: H5py_writer,
+    outfile: H5pyWriter,
     kind: str = "4d",
     metric: dict = DEFAULT_STEPS_R_MATRIX,
 ):
@@ -928,7 +928,7 @@ def track_reverse_error_method(
     part: xp.Particles,
     samples: List[int],
     _context,
-    outfile: H5py_writer,
+    outfile: H5pyWriter,
 ):
     backtracker = tracker.get_backtracker()
 
@@ -965,7 +965,7 @@ def track_tune_birkhoff(
     part: xp.Particles,
     samples: List[int],
     _context,
-    outfile: H5py_writer,
+    outfile: H5pyWriter,
 ):
     part_data = get_particle_data(part, _context, retidx=False)
     outfile.write_data(f"reference/initial/x", part_data.x)
@@ -1015,7 +1015,7 @@ def track_tune_birkhoff_CPU(
     part: xp.Particles,
     samples: List[int],
     _context,
-    outfile: H5py_writer,
+    outfile: H5pyWriter,
     remove_mean: bool = True,
 ):
     part_data = get_particle_data(part, _context, retidx=False)

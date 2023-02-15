@@ -1,0 +1,18 @@
+{
+    "maskpath": "/afs/cern.ch/work/c/camontan/public/lhc_dynamic_indicators/masks",
+    "name": "b1_worst",
+    "filename": "mask_b1_without_bb_33.json",
+
+    "x_norm_min": 0.0,
+    "x_norm_max": 14.5,
+    "y_norm_min": 0.0,
+    "y_norm_max": 15.5,
+
+    "zeta_norm_min": 0.0000,
+    "zeta_norm_avg": 0.0065,
+    "zeta_norm_max": 0.0130,
+
+    "p0c": 7e12,
+    "nemitt_x": 2.5e-6,
+    "nemitt_y": 2.5e-6
+}

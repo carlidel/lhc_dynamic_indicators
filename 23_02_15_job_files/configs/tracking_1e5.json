@@ -1,0 +1,9 @@
+{
+    "samples_per_side": 300,
+
+    "max_iterations": 1000000,
+    "time_samples": 61,
+    "sampling_method": "log",
+
+    "outpath": "./"
+}

@@ -11,12 +11,12 @@ from scipy.constants import c as clight
 from scipy.optimize import fsolve
 
 
-class H5py_writer:
+class H5pyWriter:
     def __init__(self, filename, compression=None):
         self.filename = filename
         self.compression = compression
 
-    def write_data(self, dataset_name:str, data:np.ndarray):
+    def write_data(self, dataset_name: str, data: np.ndarray):
         with h5py.File(self.filename, mode="w") as f:
             if self.compression is None:
                 f.create_dataset(dataset_name, data=data)
@@ -242,18 +242,18 @@ def compute_t_events(samples, turns_per_sample, turns_per_normalization):
     return event_list
 
 
-def track_stability(tracker, part, n_turns, _context, outfile: H5py_writer):
+def track_stability(tracker, part, n_turns, _context, outfile: H5pyWriter):
     start = datetime.datetime.now()
     print(f"Starting at: {start}")
 
     tracker.track(part, num_turns=n_turns)
     turns = get_particle_data(part, _context, retidx=False).steps
-    
+
     end = datetime.datetime.now()
     print(f"Finished at: {end}")
     delta = (end - start).total_seconds()
     print(f"Hours elapsed: {delta / (60*60)}")
-    
+
     outfile.write_data("stability", turns)
 
 
@@ -266,7 +266,7 @@ def track_log_displacement(
     turns_per_sample,
     turns_per_normalization,
     _context,
-    outfile: H5py_writer,
+    outfile: H5pyWriter,
 ):
     n_particles = len(part.x)
     event_list = compute_t_events(samples, turns_per_sample, turns_per_normalization)
@@ -310,7 +310,7 @@ def track_6d_displacements(
     turns_per_sample,
     turns_per_normalization,
     _context,
-    outfile: H5py_writer,
+    outfile: H5pyWriter,
 ):
 
     part_x = add_displacement_to_particles(part, displacement_module, "x")
@@ -465,7 +465,7 @@ def track_reverse_error_method(
     samples,
     turns_per_sample,
     _context,
-    outfile: H5py_writer,
+    outfile: H5pyWriter,
     only_4d=False,
 ):
     backtracker = tracker.get_backtracker(_context=_context)

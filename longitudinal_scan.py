@@ -9,7 +9,7 @@ import xpart as xp
 import xtrack as xt
 from tqdm import tqdm
 
-from dynamic_indicators import H5py_writer
+from dynamic_indicators import H5pyWriter
 
 context = xo.ContextCupy()
 MASK_PATH = "masks/"
@@ -20,11 +20,11 @@ selected_masks = [
     "mask_b1_without_bb_21.json",
 ]
 
-samples = 100
-n_turns = 1000
+samples = 51
+n_turns = 2500
 
 zeta_min = 0.0
-zeta_max = 0.4
+zeta_max = 0.5
 zeta_list = np.linspace(zeta_min, zeta_max, samples)
 
 for m in tqdm(selected_masks):

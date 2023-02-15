@@ -16,7 +16,7 @@ from numba import njit
 from tqdm import tqdm
 
 from dynamic_indicators_script import (
-    H5py_writer,
+    H5pyWriter,
     add_normed_displacement_to_particles,
     track_log_displacement,
     track_log_displacement_birkhoff,
@@ -75,7 +75,7 @@ with open(args.tracking, "r") as f:
     tracking_config = json.load(f)
 
 # create h5py writer
-h5py_writer = H5py_writer(
+h5py_writer = H5pyWriter(
     os.path.join(
         tracking_config["output"]["path"],
         args.output + "_" + mask_config["name"] + "_zeta_" + args.zeta + ".h5",
