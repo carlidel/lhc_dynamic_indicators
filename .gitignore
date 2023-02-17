@@ -2,6 +2,9 @@
 *.jpg
 *.png
 *.pkl
+*.out
+*.err
+*.log
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

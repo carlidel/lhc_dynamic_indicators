@@ -109,16 +109,6 @@ xx, yy = np.meshgrid(x_linspace, y_linspace)
 xx = xx.flatten()
 yy = yy.flatten()
 
-if args.kind == "tune_birkhoff":
-    n_particles = xx.size
-    chunk_points = np.arange(0, n_particles, args.sample_size)
-    xx = xx[
-        chunk_points[args.sample_num] : chunk_points[args.sample_num] + args.sample_size
-    ]
-    yy = yy[
-        chunk_points[args.sample_num] : chunk_points[args.sample_num] + args.sample_size
-    ]
-
 if args.zeta == "min":
     zeta = mask_config.zeta_norm_min
 elif args.zeta == "max":
@@ -267,8 +257,11 @@ elif args.kind == "tune_birkhoff":
     t_samples = t_samples[t_samples > 10]
     samples_half = t_samples // 2
     samples_full = samples_half * 2
-    samples_from = np.concatenate(np.zeros(samples_half.size), samples_half)
-    samples_to = np.concatenate(samples_half, samples_full)
+    samples_from = np.concatenate((np.zeros(samples_half.size), samples_half))
+    samples_to = np.concatenate((samples_half, samples_full))
+
+    samples_from = np.asarray(samples_from, dtype=int)
+    samples_to = np.asarray(samples_to, dtype=int)
 
     ndi.track_tune_birkhoff(
         tracker,
