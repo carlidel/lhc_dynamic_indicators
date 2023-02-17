@@ -18,7 +18,7 @@ tracking_options_list = [
 ]
 
 
-for i, (mask, zeta, (track_path, track_option)) in enumerate(
+for i, (mask, zeta, (track_option, track_path)) in enumerate(
     itertools.product(mask_file_list, zeta_list, tracking_options_list)
 ):
     with open("configs/all_jobs_no_tune.txt", "a" if i > 0 else "w") as f:
